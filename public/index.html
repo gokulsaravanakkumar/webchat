@@ -1,38 +1,51 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LAN Chat - Rooms</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudChat | LAN Messenger</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- Join Screen Overlay -->
-<div id="join-screen" class="overlay">
-    <div class="join-box">
-        <h2>Join a Chat Room</h2>
-        <input type="text" id="username" placeholder="Your Name...">
-        <input type="text" id="roomId" placeholder="Room ID (e.g. 1234)...">
-        <button onclick="joinRoom()">Join Chat</button>
-    </div>
-</div>
-
-<!-- Main Chat App (Hidden by default) -->
-<div id="chat-app" class="app" style="display: none;">
-    <div class="chat-header">
-        💬 Room: <span id="currentRoom"></span>
-        <span id="userLabel"></span>
+    <!-- Join Screen -->
+    <div id="join-screen" class="overlay">
+        <div class="join-box">
+            <div class="icon-header">💬</div>
+            <h2>Join a Room</h2>
+            <p>Enter your details to start chatting</p>
+            <input type="text" id="username" placeholder="Your Name..." autocomplete="off">
+            <input type="text" id="roomId" placeholder="Room ID (e.g. 101)..." autocomplete="off">
+            <button onclick="joinRoom()">Enter Chat</button>
+        </div>
     </div>
 
-    <div id="messages" class="chat-box"></div>
+    <!-- Main App UI -->
+    <div id="chat-app" class="app" style="display: none;">
+        <header class="chat-header">
+            <div class="room-info">
+                <span class="status-dot"></span>
+                Room: <span id="currentRoom"></span>
+            </div>
+            <div class="user-label">Logged as: <span id="userLabel"></span></div>
+        </header>
 
-    <form class="chat-input" id="message-form">
-        <input id="msg" placeholder="Type a message..." autocomplete="off">
-        <button type="submit">➤</button>
-    </form>
-</div>
+        <div id="messages" class="chat-box">
+            <!-- Messages appear here -->
+        </div>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="script.js"></script>
+        <form id="message-form" class="chat-input">
+            <div class="input-wrapper">
+                <input id="msg" placeholder="Type a message..." autocomplete="off">
+                <button type="submit">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
