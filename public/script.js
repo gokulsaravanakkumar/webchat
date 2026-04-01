@@ -1,6 +1,12 @@
 const socket = io();
 let currentUser = "";
 
+/* 🔐 Predefined Users */
+let registeredUsers = [
+    { username: "phoenix", password: "6369" },
+    { username: "cookie", password: "6384" }
+];
+
 function handleLogin() {
 
     const u = document.getElementById('username').value.trim();
@@ -13,32 +19,32 @@ function handleLogin() {
         return;
     }
 
-    socket.emit('login', { username: u, password: p });
+    // 🔎 Check predefined users
+    const user = registeredUsers.find(
+        user => user.username === u && user.password === p
+    );
 
-    socket.once('loginResponse', (res) => {
+    if (!user) {
+        document.getElementById('error-msg').innerText =
+            "Invalid user";
+        return;
+    }
 
-        if (res.success) {
+    // ✅ Login Success
+    currentUser = user.username;
 
-            currentUser = res.username;
+    document.getElementById('currentRoom').innerText = r;
+    document.getElementById('userLabel').innerText = currentUser;
 
-            document.getElementById('currentRoom').innerText = r;
-            document.getElementById('userLabel').innerText = res.username;
-
-            socket.emit('joinRoom', {
-                username: res.username,
-                roomId: r
-            });
-
-            document.getElementById('join-screen').style.display = 'none';
-            document.getElementById('chat-app').style.display = 'flex';
-
-            document.getElementById('error-msg').innerText = "";
-
-        } else {
-            document.getElementById('error-msg').innerText =
-                "Invalid user";
-        }
+    socket.emit('joinRoom', {
+        username: currentUser,
+        roomId: r
     });
+
+    document.getElementById('join-screen').style.display = 'none';
+    document.getElementById('chat-app').style.display = 'flex';
+
+    document.getElementById('error-msg').innerText = "";
 }
 
 function toggleSettings() {
@@ -54,22 +60,24 @@ function saveProfile() {
     const nU = document.getElementById('new-username').value.trim();
     const nP = document.getElementById('new-password').value.trim();
 
-    socket.emit('updateProfile', {
-        oldUsername: currentUser,
-        newUsername: nU,
-        newPassword: nP
-    });
+    // Update local array
+    const userIndex = registeredUsers.findIndex(
+        u => u.username === currentUser
+    );
 
-    socket.once('updateResponse', (res) => {
-        if (res.success) {
-            currentUser = res.newUsername;
-            document.getElementById('userLabel').innerText =
-                currentUser;
-
-            toggleSettings();
-            alert("Profile Updated!");
+    if (userIndex !== -1) {
+        registeredUsers[userIndex].username = nU;
+        if (nP) {
+            registeredUsers[userIndex].password = nP;
         }
-    });
+
+        currentUser = nU;
+        document.getElementById('userLabel').innerText =
+            currentUser;
+
+        toggleSettings();
+        alert("Profile Updated!");
+    }
 }
 
 document.getElementById('message-form').onsubmit = (e) => {
