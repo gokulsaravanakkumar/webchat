@@ -49,6 +49,15 @@ document.getElementById('message-form').onsubmit = (e) => {
         document.getElementById('msg').value = '';
     }
 };
+socket.on('previousMessages', (messages) => {
+    document.getElementById('messages').innerHTML = '';
+    messages.forEach(data => {
+        const div = document.createElement('div');
+        div.className = `message ${data.user === currentUser ? 'me' : 'other'}`;
+        div.innerHTML = `<b>${data.user}:</b> ${data.msg}`;
+        document.getElementById('messages').appendChild(div);
+    });
+});
 
 socket.on('message', (data) => {
     const div = document.createElement('div');
