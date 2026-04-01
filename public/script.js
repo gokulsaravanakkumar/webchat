@@ -1,54 +1,59 @@
-// script.js
 const socket = io();
-
-const joinScreen = document.getElementById('join-screen');
-const chatApp = document.getElementById('chat-app');
-const messageForm = document.getElementById('message-form');
-const messageInput = document.getElementById('msg');
-const messagesContainer = document.getElementById('messages');
-
 let currentUser = "";
 
-function joinRoom() {
-    const username = document.getElementById('username').value;
-    const roomId = document.getElementById('roomId').value;
+function handleLogin() {
+    const u = document.getElementById('username').value;
+    const p = document.getElementById('password').value;
+    const r = document.getElementById('roomId').value;
 
-    if (username && roomId) {
-        currentUser = username;
-        document.getElementById('currentRoom').innerText = roomId;
-        document.getElementById('userLabel').innerText = username;
-
-        // Tell server to join room
-        socket.emit('joinRoom', { username, roomId });
-
-        joinScreen.style.display = 'none';
-        chatApp.style.display = 'flex';
-    } else {
-        alert("Please fill in both fields!");
-    }
+    socket.emit('login', { username: u, password: p });
+    socket.once('loginResponse', (res) => {
+        if (res.success) {
+            currentUser = res.username;
+            document.getElementById('currentRoom').innerText = r;
+            document.getElementById('userLabel').innerText = res.username;
+            socket.emit('joinRoom', { username: res.username, roomId: r });
+            document.getElementById('join-screen').style.display = 'none';
+            document.getElementById('chat-app').style.display = 'flex';
+        } else {
+            document.getElementById('error-msg').innerText = res.message;
+        }
+    });
 }
 
-messageForm.addEventListener('submit', (e) => {
+function toggleSettings() {
+    const s = document.getElementById('settings-overlay');
+    s.style.display = s.style.display === 'none' ? 'flex' : 'none';
+    document.getElementById('new-username').value = currentUser;
+}
+
+function saveProfile() {
+    const nU = document.getElementById('new-username').value;
+    const nP = document.getElementById('new-password').value;
+    socket.emit('updateProfile', { oldUsername: currentUser, newUsername: nU, newPassword: nP });
+    socket.once('updateResponse', (res) => {
+        if (res.success) {
+            currentUser = res.newUsername;
+            document.getElementById('userLabel').innerText = currentUser;
+            toggleSettings();
+            alert("Profile Updated!");
+        }
+    });
+}
+
+document.getElementById('message-form').onsubmit = (e) => {
     e.preventDefault();
-    if (messageInput.value) {
-        const data = {
-            user: currentUser,
-            msg: messageInput.value,
-            room: document.getElementById('currentRoom').innerText
-        };
-        
-        socket.emit('chatMessage', data);
-        messageInput.value = '';
+    const msg = document.getElementById('msg').value;
+    if (msg) {
+        socket.emit('chatMessage', { user: currentUser, msg, room: document.getElementById('currentRoom').innerText });
+        document.getElementById('msg').value = '';
     }
-});
+};
 
 socket.on('message', (data) => {
     const div = document.createElement('div');
-    div.classList.add('message');
-    div.classList.add(data.user === currentUser ? 'me' : 'other');
-    
-    div.innerHTML = `<span class="msg-user">${data.user}</span>${data.msg}`;
-    
-    messagesContainer.appendChild(div);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    div.className = `message ${data.user === currentUser ? 'me' : 'other'}`;
+    div.innerHTML = `<b>${data.user}:</b> ${data.msg}`;
+    document.getElementById('messages').appendChild(div);
+    document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
 });
