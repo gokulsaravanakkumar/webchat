@@ -1,48 +1,51 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudChat | LAN Messenger</title>
+    <title>Secure LAN Chat</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- Join Screen -->
+    <!-- Join/Login Screen -->
     <div id="join-screen" class="overlay">
-        <div class="join-box">
-            <div class="icon-header">💬</div>
-            <h2>Join a Room</h2>
-            <p>Enter your details to start chatting</p>
-            <input type="text" id="username" placeholder="Your Name..." autocomplete="off">
-            <input type="text" id="roomId" placeholder="Room ID (e.g. 101)..." autocomplete="off">
-            <button onclick="joinRoom()">Enter Chat</button>
+        <div class="box">
+            <h2>🔒 Secure Login</h2>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <input type="text" id="roomId" placeholder="Room ID">
+            <button onclick="handleLogin()">Login & Join</button>
+            <p id="error-msg" class="error"></p>
         </div>
     </div>
 
-    <!-- Main App UI -->
+    <!-- Main Chat App -->
     <div id="chat-app" class="app" style="display: none;">
         <header class="chat-header">
-            <div class="room-info">
-                <span class="status-dot"></span>
-                Room: <span id="currentRoom"></span>
+            <div class="header-top">
+                <span>🟢 Room: <b id="currentRoom"></b></span>
+                <button onclick="toggleSettings()" class="icon-btn">⚙️ Settings</button>
             </div>
-            <div class="user-label">Logged as: <span id="userLabel"></span></div>
+            <div class="user-info">User: <b id="userLabel"></b></div>
         </header>
-
-        <div id="messages" class="chat-box">
-            <!-- Messages appear here -->
-        </div>
-
+        <div id="messages" class="chat-box"></div>
         <form id="message-form" class="chat-input">
-            <div class="input-wrapper">
-                <input id="msg" placeholder="Type a message..." autocomplete="off">
-                <button type="submit">
-                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                </button>
-            </div>
+            <input id="msg" placeholder="Message..." autocomplete="off">
+            <button type="submit">Send</button>
         </form>
+    </div>
+
+    <!-- Settings Overlay -->
+    <div id="settings-overlay" class="overlay" style="display: none;">
+        <div class="box">
+            <h3>Update Profile</h3>
+            <input type="text" id="new-username" placeholder="New Username">
+            <input type="password" id="new-password" placeholder="New Password">
+            <div class="btn-group">
+                <button onclick="saveProfile()">Save</button>
+                <button onclick="toggleSettings()" class="cancel">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
