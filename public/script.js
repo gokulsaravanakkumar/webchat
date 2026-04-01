@@ -1,11 +1,11 @@
-const socket = io();
-let currentUser = "";
-
 /* 🔐 Predefined Users */
 let registeredUsers = [
     { username: "phoenix", password: "6369" },
     { username: "cookie", password: "6384" }
 ];
+
+const socket = io();
+let currentUser = "";
 
 function handleLogin() {
 
@@ -19,7 +19,6 @@ function handleLogin() {
         return;
     }
 
-    // 🔎 Check predefined users
     const user = registeredUsers.find(
         user => user.username === u && user.password === p
     );
@@ -30,7 +29,6 @@ function handleLogin() {
         return;
     }
 
-    // ✅ Login Success
     currentUser = user.username;
 
     document.getElementById('currentRoom').innerText = r;
@@ -46,84 +44,3 @@ function handleLogin() {
 
     document.getElementById('error-msg').innerText = "";
 }
-
-function toggleSettings() {
-    const s = document.getElementById('settings-overlay');
-    s.style.display =
-        s.style.display === 'none' ? 'flex' : 'none';
-
-    document.getElementById('new-username').value = currentUser;
-}
-
-function saveProfile() {
-
-    const nU = document.getElementById('new-username').value.trim();
-    const nP = document.getElementById('new-password').value.trim();
-
-    // Update local array
-    const userIndex = registeredUsers.findIndex(
-        u => u.username === currentUser
-    );
-
-    if (userIndex !== -1) {
-        registeredUsers[userIndex].username = nU;
-        if (nP) {
-            registeredUsers[userIndex].password = nP;
-        }
-
-        currentUser = nU;
-        document.getElementById('userLabel').innerText =
-            currentUser;
-
-        toggleSettings();
-        alert("Profile Updated!");
-    }
-}
-
-document.getElementById('message-form').onsubmit = (e) => {
-
-    e.preventDefault();
-
-    const msg = document.getElementById('msg').value.trim();
-
-    if (!msg) return;
-
-    socket.emit('chatMessage', {
-        user: currentUser,
-        msg,
-        room: document.getElementById('currentRoom').innerText
-    });
-
-    document.getElementById('msg').value = '';
-};
-
-socket.on('previousMessages', (messages) => {
-
-    const container = document.getElementById('messages');
-    container.innerHTML = '';
-
-    messages.forEach(data => {
-        const div = document.createElement('div');
-        div.className =
-            `message ${data.user === currentUser ? 'me' : 'other'}`;
-        div.innerHTML =
-            `<b>${data.user}:</b> ${data.msg}`;
-
-        container.appendChild(div);
-    });
-});
-
-socket.on('message', (data) => {
-
-    const div = document.createElement('div');
-
-    div.className =
-        `message ${data.user === currentUser ? 'me' : 'other'}`;
-
-    div.innerHTML =
-        `<b>${data.user}:</b> ${data.msg}`;
-
-    const container = document.getElementById('messages');
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-});
