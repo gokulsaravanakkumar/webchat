@@ -2,6 +2,12 @@ const express = require('express');
 const http = require('http');
 const socketio = require('socket.io');
 const path = require('path');
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "https://webchat-kohl.vercel.app", // Your Vercel URL
+    methods: ["GET", "POST"]
+  }
+});
 
 const app = express();
 const server = http.createServer(app);
