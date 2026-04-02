@@ -3,86 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sleek Chat Login</title>
-    <!-- Modern Font -->
+    <title>Sleek Chat App</title>
     <link href="https://googleapis.com" rel="stylesheet">
-    <!-- Link to external CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="container">
-        <!-- 1. Join/Login Screen -->
+        <!-- LOGIN SCREEN -->
         <div id="join-screen" class="card">
-            <h3>Welcome Back</h3>
+            <h3>Chat Login</h3>
             <div id="error-msg"></div>
             <div class="input-group">
-                <input type="text" id="username" placeholder="Username" autocomplete="off">
+                <input type="text" id="username" placeholder="Username">
                 <input type="password" id="password" placeholder="Password">
                 <input type="text" id="roomId" placeholder="Room ID">
             </div>
-            <button onclick="handleLogin()" class="btn-primary">Sign In</button>
+            <button onclick="handleLogin()" class="btn-primary">Join Room</button>
         </div>
 
-        <!-- 2. Chat Application Screen -->
-        <div id="chat-app" class="card" style="display: none;">
-            <h3>Chat Active</h3>
-            <div class="info">
-                <div class="user-badge">
+        <!-- CHAT SCREEN -->
+        <div id="chat-app" class="card chat-card" style="display: none;">
+            <div class="chat-header">
+                <div class="user-info">
                     <span class="status-dot"></span>
                     <span id="userLabel"></span>
                 </div>
-                <div class="room-badge">
-                    Room: <b id="currentRoom"></b>
-                </div>
+                <div class="room-label">Room: <span id="currentRoom"></span></div>
             </div>
-            <p class="status-text">Connected to secure socket.</p>
-            <button onclick="location.reload()" class="btn-secondary">Logout</button>
+
+            <div id="message-container"></div>
+
+            <div class="chat-input-area">
+                <input type="text" id="msg-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()" class="btn-send">Send</button>
+            </div>
+            <button onclick="location.reload()" class="btn-logout">Logout</button>
         </div>
     </div>
 
-    <!-- Socket.io Library -->
-    <script src="https://socket.io"></script>
-    
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-        let registeredUsers = [
-            { username: "phoenix", password: "6369" },
-            { username: "cookie", password: "6384" }
-        ];
-
-        // Replace with your server URL
-        const socket = io("https://your-socket-server.com", { autoConnect: false });
+        const socket = io();
+        let myUsername = "";
 
         function handleLogin() {
             const u = document.getElementById('username').value.trim();
             const p = document.getElementById('password').value.trim();
             const r = document.getElementById('roomId').value.trim();
-            const errorDiv = document.getElementById('error-msg');
+            
+            const users = [{u:"phoenix",p:"6369"}, {u:"cookie",p:"6384"}];
+            const user = users.find(user => user.u === u.toLowerCase() && user.p === p);
 
-            if (!u || !p || !r) {
-                errorDiv.innerText = "All fields are required";
+            if (!user || !r) {
+                document.getElementById('error-msg').innerText = "Invalid Credentials";
                 return;
             }
 
-            const user = registeredUsers.find(
-                user => user.username.toLowerCase() === u.toLowerCase() && user.password === p
-            );
-
-            if (!user) {
-                errorDiv.innerText = "Invalid credentials";
-                return;
-            }
-
-            // Update UI
+            myUsername = u;
+            document.getElementById('userLabel').innerText = u;
             document.getElementById('currentRoom').innerText = r;
-            document.getElementById('userLabel').innerText = user.username;
             document.getElementById('join-screen').style.display = 'none';
             document.getElementById('chat-app').style.display = 'flex';
 
-            // Socket logic
-            socket.connect();
-            socket.emit('joinRoom', { username: user.username, roomId: r });
+            socket.emit('joinRoom', { username: u, roomId: r });
         }
+
+        function sendMessage() {
+            const input = document.getElementById('msg-input');
+            const room = document.getElementById('currentRoom').innerText;
+            if (input.value.trim()) {
+                socket.emit('chatMessage', { room, username: myUsername, text: input.value });
+                input.value = "";
+            }
+        }
+
+        socket.on('message', (data) => {
+            const container = document.getElementById('message-container');
+            const isMe = data.username === myUsername;
+            const isSystem = data.username === 'System';
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = isSystem ? 'msg-system' : (isMe ? 'msg-row me' : 'msg-row');
+            
+            msgDiv.innerHTML = isSystem ? `<span>${data.text}</span>` : `
+                <div class="bubble">
+                    <div class="sender">${data.username}</div>
+                    <div class="text">${data.text}</div>
+                    <div class="time">${data.time}</div>
+                </div>
+            `;
+            
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        });
     </script>
 </body>
 </html>
