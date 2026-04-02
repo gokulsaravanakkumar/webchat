@@ -3,52 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Web Chat</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Socket.io Chat Login</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f0f2f5; }
+        #join-screen, #chat-app { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); flex-direction: column; width: 300px; display: flex;}
+        #chat-app { display: none; }
+        input { margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        #error-msg { color: red; font-size: 0.8rem; margin-bottom: 10px; min-height: 1em; }
+        .info { font-size: 0.9rem; margin-bottom: 20px; color: #555; }
+    </style>
 </head>
 <body>
-    <!-- Join/Login Screen -->
-    <div id="join-screen" class="overlay">
-        <div class="box">
-            <h2>🔒 Secure Login</h2>
-            <input type="text" id="username" placeholder="Username">
-            <input type="password" id="password" placeholder="Password">
-            <input type="text" id="roomId" placeholder="Room ID">
-            <button onclick="handleLogin()">Login & Join</button>
-            <p id="error-msg" class="error"></p>
-        </div>
+
+    <!-- 1. Join/Login Screen -->
+    <div id="join-screen">
+        <h3>Chat Login</h3>
+        <div id="error-msg"></div>
+        <input type="text" id="username" placeholder="Username (phoenix or cookie)">
+        <input type="password" id="password" placeholder="Password (6369 or 6384)">
+        <input type="text" id="roomId" placeholder="Room ID (e.g. 101)">
+        <button onclick="handleLogin()">Join Room</button>
     </div>
 
-    <!-- Main Chat App -->
-    <div id="chat-app" class="app" style="display: none;">
-        <header class="chat-header">
-            <div class="header-top">
-                <span>🟢 Room: <b id="currentRoom"></b></span>
-                <button onclick="toggleSettings()" class="icon-btn">⚙️ Settings</button>
-            </div>
-            <div class="user-info">User: <b id="userLabel"></b></div>
-        </header>
-        <div id="messages" class="chat-box"></div>
-        <form id="message-form" class="chat-input">
-            <input id="msg" placeholder="Message..." autocomplete="off">
-            <button type="submit">Send</button>
-        </form>
+    <!-- 2. Chat Application Screen -->
+    <div id="chat-app">
+        <div class="info">
+            Welcome, <b id="userLabel"></b>!<br>
+            Current Room: <b id="currentRoom"></b>
+        </div>
+        <p>You are now connected to the socket.</p>
+        <button onclick="location.reload()" style="background:#dc3545">Logout</button>
     </div>
 
-    <!-- Settings Overlay -->
-    <div id="settings-overlay" class="overlay" style="display: none;">
-        <div class="box">
-            <h3>Update Profile</h3>
-            <input type="text" id="new-username" placeholder="New Username">
-            <input type="password" id="new-password" placeholder="New Password">
-            <div class="btn-group">
-                <button onclick="saveProfile()">Save</button>
-                <button onclick="toggleSettings()" class="cancel">Cancel</button>
-            </div>
-        </div>
-    </div>
-    
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
+    <!-- 3. Socket.io Client Library -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <script>
+        /* 🔐 Predefined Users */
+        let registeredUsers = [
+            { username: "phoenix", password: "6369" },
+            { username: "cookie", password: "6384" }
+        ];
+
+        // Initialize socket but don't connect until login is successful
+        // Replace with your actual server URL if you have one
+        const socket = io("https://your-socket-server.com", { autoConnect: false });
+
+        function handleLogin() {
+            // Get values from inputs
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+            const r = document.getElementById('roomId').value.trim();
+            const errorDiv = document.getElementById('error-msg');
+
+            // 1. Validation
+            if (!u || !p || !r) {
+                errorDiv.innerText = "Please fill all fields!";
+                return;
+            }
+
+            // 2. Authentication Logic (Case-insensitive username)
+            const user = registeredUsers.find(
+                user => user.username.toLowerCase() === u.toLowerCase() && user.password === p
+            );
+
+            if (!user) {
+                errorDiv.innerText = "Invalid username or password";
+                return;
+            }
+
+            // 3. Successful Login Actions
+            const currentUser = user.username;
+            errorDiv.innerText = "";
+
+            // Update UI
+            document.getElementById('currentRoom').innerText = r;
+            document.getElementById('userLabel').innerText = currentUser;
+            document.getElementById('join-screen').style.display = 'none';
+            document.getElementById('chat-app').style.display = 'flex';
+
+            // 4. Socket Interaction
+            socket.connect();
+            socket.emit('joinRoom', {
+                username: currentUser,
+                roomId: r
+            });
+            
+            console.log(`User ${currentUser} joined room ${r}`);
+        }
+    </script>
 </body>
 </html>
