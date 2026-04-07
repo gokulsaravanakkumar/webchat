@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sleek Chat App</title>
+    <!-- Adding Google Font for the 'Inter' font used in your CSS -->
     <link href="https://googleapis.com" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,11 +14,11 @@
         <!-- LOGIN SCREEN -->
         <div id="join-screen" class="card">
             <h3>Chat Login</h3>
-            <div id="error-msg"></div>
+            <div id="error-msg" style="color: #ef4444; font-size: 0.8rem; margin-bottom: 10px;"></div>
             <div class="input-group">
                 <input type="text" id="username" placeholder="Username">
                 <input type="password" id="password" placeholder="Password">
-                <input type="text" id="roomId" placeholder="Room ID">
+                <input type="text" id="roomId" placeholder="Room ID (e.g. 101)">
             </div>
             <button onclick="handleLogin()" class="btn-primary">Join Room</button>
         </div>
@@ -27,7 +28,7 @@
             <div class="chat-header">
                 <div class="user-info">
                     <span class="status-dot"></span>
-                    <span id="userLabel"></span>
+                    <span id="userLabel" style="margin-left: 8px;"></span>
                 </div>
                 <div class="room-label">Room: <span id="currentRoom"></span></div>
             </div>
@@ -43,60 +44,6 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        let myUsername = "";
-
-        function handleLogin() {
-            const u = document.getElementById('username').value.trim();
-            const p = document.getElementById('password').value.trim();
-            const r = document.getElementById('roomId').value.trim();
-            
-            const users = [{u:"phoenix",p:"6369"}, {u:"cookie",p:"6384"}];
-            const user = users.find(user => user.u === u.toLowerCase() && user.p === p);
-
-            if (!user || !r) {
-                document.getElementById('error-msg').innerText = "Invalid Credentials";
-                return;
-            }
-
-            myUsername = u;
-            document.getElementById('userLabel').innerText = u;
-            document.getElementById('currentRoom').innerText = r;
-            document.getElementById('join-screen').style.display = 'none';
-            document.getElementById('chat-app').style.display = 'flex';
-
-            socket.emit('joinRoom', { username: u, roomId: r });
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('msg-input');
-            const room = document.getElementById('currentRoom').innerText;
-            if (input.value.trim()) {
-                socket.emit('chatMessage', { room, username: myUsername, text: input.value });
-                input.value = "";
-            }
-        }
-
-        socket.on('message', (data) => {
-            const container = document.getElementById('message-container');
-            const isMe = data.username === myUsername;
-            const isSystem = data.username === 'System';
-
-            const msgDiv = document.createElement('div');
-            msgDiv.className = isSystem ? 'msg-system' : (isMe ? 'msg-row me' : 'msg-row');
-            
-            msgDiv.innerHTML = isSystem ? `<span>${data.text}</span>` : `
-                <div class="bubble">
-                    <div class="sender">${data.username}</div>
-                    <div class="text">${data.text}</div>
-                    <div class="time">${data.time}</div>
-                </div>
-            `;
-            
-            container.appendChild(msgDiv);
-            container.scrollTop = container.scrollHeight;
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
