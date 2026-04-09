@@ -1,49 +1,516 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sleek Chat App</title>
-    <!-- Adding Google Font for the 'Inter' font used in your CSS -->
-    <link href="https://googleapis.com" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sleek Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #6366f1;
+    --accent: #a855f7;
+    --bg-deep: #0f172a;
+    --bg-card: rgba(15, 23, 42, 0.85);
+    --bg-input: rgba(15, 23, 42, 0.7);
+    --border: rgba(255,255,255,0.08);
+    --border-focus: rgba(99,102,241,0.6);
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --bubble-other: rgba(30, 41, 59, 0.9);
+    --success: #10b981;
+    --danger: #f43f5e;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0f172a;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Animated background blobs */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+    animation: drift 12s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::before {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, #6366f1, transparent);
+    top: -100px; left: -100px;
+  }
+  body::after {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, #a855f7, transparent);
+    bottom: -80px; right: -80px;
+    animation-delay: -6s;
+  }
+  @keyframes drift {
+    from { transform: translate(0,0) scale(1); }
+    to   { transform: translate(40px,30px) scale(1.1); }
+  }
+
+  /* ── SCREENS ── */
+  .screen { position: relative; z-index: 1; }
+
+  /* ── GLASS CARD ── */
+  .card {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: 0 32px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* ══════════════════════════
+     LOGIN SCREEN
+  ══════════════════════════ */
+  #login-screen { width: 380px; padding: 2.5rem; }
+
+  .login-logo {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 1.8rem;
+  }
+  .login-logo .icon {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .login-logo h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+  .login-logo p  { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+
+  .field { margin-bottom: 14px; position: relative; }
+  .field label { display: block; font-size: 0.75rem; font-weight: 600;
+    color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .field input {
+    width: 100%; padding: 13px 14px;
+    background: var(--bg-input);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; color: var(--text);
+    font-size: 0.95rem; font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .field input::placeholder { color: #475569; }
+  .field input:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  }
+
+  .error-box {
+    background: rgba(244,63,94,0.12);
+    border: 1px solid rgba(244,63,94,0.3);
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 0.82rem; color: #fda4af;
+    margin-bottom: 14px; display: none;
+  }
+
+  .btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border: none; border-radius: 12px;
+    color: #fff; font-size: 1rem; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+    transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(99,102,241,0.35);
+  }
+  .btn:hover   { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(99,102,241,0.45); }
+  .btn:active  { transform: translateY(0); opacity: 0.9; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .login-footer { text-align: center; margin-top: 18px; font-size: 0.78rem; color: #475569; }
+
+  /* ══════════════════════════
+     CHAT SCREEN
+  ══════════════════════════ */
+  #chat-screen { display: none; width: 460px; height: 680px; flex-direction: column; padding: 0; overflow: hidden; }
+
+  .chat-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px; border-bottom: 1px solid var(--border);
+    background: rgba(15,23,42,0.5);
+    flex-shrink: 0;
+  }
+  .chat-header-left { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .chat-title { font-size: 0.95rem; font-weight: 700; }
+  .chat-sub   { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+  .online-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--success); display: inline-block;
+    box-shadow: 0 0 6px var(--success); margin-right: 5px;
+  }
+
+  .room-badge {
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.3);
+    color: #a5b4fc; font-size: 0.72rem; font-weight: 600;
+    padding: 4px 10px; border-radius: 20px;
+  }
+
+  /* Messages */
+  #messages {
+    flex: 1; overflow-y: auto; padding: 18px 18px 8px;
+    display: flex; flex-direction: column; gap: 10px;
+    scroll-behavior: smooth;
+  }
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.4); border-radius: 4px; }
+
+  .msg-wrap { display: flex; flex-direction: column; }
+  .msg-wrap.mine { align-items: flex-end; }
+  .msg-wrap.theirs { align-items: flex-start; }
+  .msg-wrap.system { align-items: center; }
+
+  .msg-sender { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; padding: 0 4px; }
+
+  .bubble {
+    max-width: 75%; padding: 11px 15px;
+    border-radius: 18px; font-size: 0.9rem; line-height: 1.5;
+    animation: pop 0.2s ease;
+    word-break: break-word;
+  }
+  @keyframes pop { from { opacity:0; transform: scale(0.92) translateY(6px); } to { opacity:1; transform: scale(1) translateY(0); } }
+
+  .mine .bubble {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border-bottom-right-radius: 5px; color: #fff;
+  }
+  .theirs .bubble {
+    background: var(--bubble-other);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 5px;
+  }
+  .system .bubble {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 20px; font-size: 0.75rem;
+    color: var(--text-muted); padding: 5px 14px;
+  }
+  .msg-time { font-size: 0.65rem; color: #475569; margin-top: 4px; padding: 0 4px; }
+
+  /* Input area */
+  .chat-footer {
+    padding: 14px 18px 18px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: center;
+    flex-shrink: 0;
+  }
+  .chat-footer input {
+    flex: 1; background: var(--bg-input);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 12px 15px;
+    color: var(--text); font-size: 0.9rem; font-family: inherit;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .chat-footer input::placeholder { color: #475569; }
+  .chat-footer input:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+  }
+  .send-btn {
+    width: 44px; height: 44px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #fff; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+  }
+  .send-btn:hover { transform: scale(1.06); box-shadow: 0 6px 18px rgba(99,102,241,0.45); }
+  .send-btn:active { transform: scale(0.96); }
+  .send-btn svg { width: 18px; height: 18px; }
+
+  .logout-btn {
+    background: none; border: none; color: var(--danger);
+    cursor: pointer; padding: 6px; border-radius: 8px;
+    transition: background 0.2s; display: flex; align-items: center;
+    font-size: 0.75rem; font-weight: 600; gap: 5px;
+  }
+  .logout-btn:hover { background: rgba(244,63,94,0.1); }
+  .logout-btn svg { width: 16px; height: 16px; }
+
+  /* Typing indicator */
+  .typing-row { display: flex; align-items: center; gap: 6px; padding: 0 4px 4px; }
+  .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: blink 1.2s infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+  /* ── SHARED BIT ── */
+  #chat-screen { display: none; }
+  #chat-screen.active { display: flex; }
+</style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- LOGIN SCREEN -->
-        <div id="join-screen" class="card">
-            <h3>Chat Login</h3>
-            <div id="error-msg" style="color: #ef4444; font-size: 0.8rem; margin-bottom: 10px;"></div>
-            <div class="input-group">
-                <input type="text" id="username" placeholder="Username">
-                <input type="password" id="password" placeholder="Password">
-                <input type="text" id="roomId" placeholder="Room ID (e.g. 101)">
-            </div>
-            <button onclick="handleLogin()" class="btn-primary">Join Room</button>
-        </div>
-
-        <!-- CHAT SCREEN -->
-        <div id="chat-app" class="card chat-card" style="display: none;">
-            <div class="chat-header">
-                <div class="user-info">
-                    <span class="status-dot"></span>
-                    <span id="userLabel" style="margin-left: 8px;"></span>
-                </div>
-                <div class="room-label">Room: <span id="currentRoom"></span></div>
-            </div>
-
-            <div id="message-container"></div>
-
-            <div class="chat-input-area">
-                <input type="text" id="msg-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button onclick="sendMessage()" class="btn-send">Send</button>
-            </div>
-            <button onclick="location.reload()" class="btn-logout">Logout</button>
-        </div>
+<!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
+<div id="login-screen" class="screen card">
+  <div class="login-logo">
+    <div class="icon">💬</div>
+    <div>
+      <h1>Sleek Chat</h1>
+      <p>Real-time messaging, instantly</p>
     </div>
+  </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
+  <div class="error-box" id="error-msg"></div>
+
+  <div class="field">
+    <label>Username</label>
+    <input type="text" id="inp-user" placeholder="Enter your username" autocomplete="off">
+  </div>
+  <div class="field">
+    <label>Password</label>
+    <input type="password" id="inp-pass" placeholder="Enter your password">
+  </div>
+  <div class="field">
+    <label>Room ID</label>
+    <input type="text" id="inp-room" placeholder="e.g. 101" autocomplete="off">
+  </div>
+
+  <button class="btn" id="login-btn" onclick="handleLogin()">Join Room →</button>
+  <p class="login-footer">Demo users: <strong>phoenix / 6369</strong> &nbsp;|&nbsp; <strong>cookie / 6384</strong></p>
+</div>
+
+<!-- ═══════════════ CHAT SCREEN ═══════════════ -->
+<div id="chat-screen" class="screen card">
+  <div class="chat-header">
+    <div class="chat-header-left">
+      <div class="avatar">🏠</div>
+      <div>
+        <div class="chat-title" id="room-title">Room —</div>
+        <div class="chat-sub"><span class="online-dot"></span><span id="online-count">2 online</span></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="room-badge" id="room-badge">Room —</span>
+      <button class="logout-btn" onclick="doLogout()" title="Logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="messages"></div>
+
+  <div class="chat-footer">
+    <input type="text" id="msg-input" placeholder="Type a message…" autocomplete="off" onkeydown="if(event.key==='Enter')sendMsg()">
+    <button class="send-btn" onclick="sendMsg()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────
+   USERS & STATE
+───────────────────────────────────── */
+const USERS = [
+  { username: "phoenix", password: "6369" },
+  { username: "cookie",  password: "6384" }
+];
+
+let me = "";
+let room = "";
+
+/* ─────────────────────────────────────
+   BROADCAST CHANNEL  (same-origin tab messaging)
+   This replaces Socket.IO for static Vercel deploys.
+   Two tabs open to the same page & same room → real-time chat!
+───────────────────────────────────── */
+let bc = null;
+
+function initBC() {
+  if (bc) bc.close();
+  bc = new BroadcastChannel(`sleek-chat-room-${room}`);
+  bc.onmessage = (e) => {
+    const d = e.data;
+    if (d.type === "msg") appendMsg(d, false);
+    if (d.type === "join") appendSystem(`${d.username} joined the room`);
+    if (d.type === "leave") appendSystem(`${d.username} left the room`);
+    if (d.type === "ping") {
+      bc.postMessage({ type: "pong", username: me });
+      updateOnline(d.username);
+    }
+    if (d.type === "pong") updateOnline(d.username);
+  };
+}
+
+/* track who's online (simple ping/pong) */
+const onlineUsers = new Set();
+function updateOnline(user) {
+  onlineUsers.add(user);
+  document.getElementById("online-count").textContent =
+    onlineUsers.size + (onlineUsers.size === 1 ? " online" : " online");
+}
+
+/* ─────────────────────────────────────
+   LOGIN
+───────────────────────────────────── */
+function handleLogin() {
+  const u = document.getElementById("inp-user").value.trim().toLowerCase();
+  const p = document.getElementById("inp-pass").value.trim();
+  const r = document.getElementById("inp-room").value.trim();
+
+  const errEl = document.getElementById("error-msg");
+  errEl.style.display = "none";
+
+  if (!u || !p || !r) {
+    showError("Please fill in all fields.");
+    return;
+  }
+
+  const found = USERS.find(x => x.username === u && x.password === p);
+  if (!found) {
+    showError("Invalid username or password.");
+    return;
+  }
+
+  me   = found.username;
+  room = r;
+
+  /* Switch UI */
+  document.getElementById("login-screen").style.display  = "none";
+  document.getElementById("chat-screen").style.display   = "flex";
+
+  document.getElementById("room-title").textContent  = `Room ${r}`;
+  document.getElementById("room-badge").textContent  = `Room ${r}`;
+  document.getElementById("msg-input").focus();
+
+  /* Setup BroadcastChannel */
+  initBC();
+  onlineUsers.add(me);
+  updateOnline(me);
+
+  /* Announce join */
+  bc.postMessage({ type: "join", username: me });
+
+  /* Ping others to discover who's online */
+  bc.postMessage({ type: "ping", username: me });
+
+  appendSystem(`Welcome, ${me}! You joined Room ${r}.`);
+}
+
+function showError(msg) {
+  const el = document.getElementById("error-msg");
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+/* ─────────────────────────────────────
+   SEND MESSAGE
+───────────────────────────────────── */
+function sendMsg() {
+  const inp = document.getElementById("msg-input");
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = "";
+
+  const d = {
+    type: "msg",
+    username: me,
+    text,
+    time: now()
+  };
+
+  /* Show immediately to sender */
+  appendMsg(d, true);
+
+  /* Broadcast to other tabs */
+  bc.postMessage(d);
+}
+
+/* ─────────────────────────────────────
+   RENDER HELPERS
+───────────────────────────────────── */
+function appendMsg(d, isMine) {
+  const wrap = el("div", isMine ? "msg-wrap mine" : "msg-wrap theirs");
+  if (!isMine) {
+    const sender = el("div", "msg-sender");
+    sender.textContent = d.username;
+    wrap.appendChild(sender);
+  }
+  const bubble = el("div", "bubble");
+  bubble.textContent = d.text;
+  wrap.appendChild(bubble);
+  const time = el("div", "msg-time");
+  time.textContent = d.time;
+  wrap.appendChild(time);
+  addToFeed(wrap);
+}
+
+function appendSystem(text) {
+  const wrap = el("div", "msg-wrap system");
+  const bubble = el("div", "bubble");
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  addToFeed(wrap);
+}
+
+function addToFeed(node) {
+  const feed = document.getElementById("messages");
+  feed.appendChild(node);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function el(tag, cls) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  return e;
+}
+
+function now() {
+  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+/* ─────────────────────────────────────
+   LOGOUT
+───────────────────────────────────── */
+function doLogout() {
+  if (bc) {
+    bc.postMessage({ type: "leave", username: me });
+    bc.close();
+    bc = null;
+  }
+  me = ""; room = "";
+  onlineUsers.clear();
+  document.getElementById("messages").innerHTML = "";
+  document.getElementById("chat-screen").style.display  = "none";
+  document.getElementById("login-screen").style.display = "block";
+  document.getElementById("inp-pass").value = "";
+}
+
+/* Clean disconnect on tab close */
+window.addEventListener("beforeunload", () => {
+  if (bc && me) {
+    bc.postMessage({ type: "leave", username: me });
+    bc.close();
+  }
+});
+</script>
 </body>
 </html>
+SS
